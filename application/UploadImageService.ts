@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 export class UploadImageService {
     constructor(private readonly imageStorage: IImageStorage) {}
     async handleUpload(buffer: Buffer): Promise<{ url: string; fileName: string }> {
-        const fileName = `${uuidv4()}.jpg`;
+        const fileName = `${uuidv4()}.png`;
         const url = await this.imageStorage.uploadImage(buffer, fileName);
         return { url, fileName };
     }
