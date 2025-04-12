@@ -1,7 +1,7 @@
 import { AzureFunction, Context } from "@azure/functions"
 import { DefaultAzureCredential } from "@azure/identity";
 import createImageAnalysisClient  from "@azure-rest/ai-vision-image-analysis";
-import sql from "mssql";
+import { Client } from "pg";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
 import { ProcessPendingImages } from "../application/ProcessPendingImages";
 import { TextAnalyticsService } from "../infrastructure/TextAnalyticsService";
@@ -10,35 +10,34 @@ import { TextAnalyticsService } from "../infrastructure/TextAnalyticsService";
 const managedIdentityClientId = process.env.AZURE_COGNITIVESERVICES_CLIENTID;
 const endpoint = process.env.AZURE_COGNITIVESERVICES_RESOURCEENDPOINT;
 
-// Azure SQL Database connection details
-const server = process.env.AZURE_SQL_SERVER;
-const database = process.env.AZURE_SQL_DATABASE;
-const port = parseInt(process.env.AZURE_SQL_PORT);
-const authenticationType = process.env.AZURE_SQL_AUTHENTICATIONTYPE;
-const clientId = process.env.AZURE_SQL_CLIENTID;
+// Azure Postgres SQL Database connection details
+const host = process.env.AZURE_POSTGRESQL_HOST;
+const user = process.env.AZURE_POSTGRESQL_USER;
+const database = process.env.AZURE_POSTGRESQL_DATABASE;
+const port = parseInt(process.env.AZURE_POSTGRESQL_PORT);
+const ssl = process.env.AZURE_POSTGRESQL_SSL === "true" ? { rejectUnauthorized: false } : false;
 
 const timerTrigger: AzureFunction = async function (context: Context, myTimer: any): Promise<void> {
     try {
-        context.log("Timer trigger function started.");
+
         context.log("Processing pending images...");
-        const pool = await sql.connect({
-            server,
-            port,
+        const credential = new DefaultAzureCredential({
+            managedIdentityClientId,
+        });
+
+        const password = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
+        
+        const pool = new Client({
+            host,
+            user,
+            password,
             database,
-            authentication: {
-                type: authenticationType
-            },
-            options: {
-                encrypt: true,
-                clientId,
-            }
+            port,
+            ssl,
         });
         
         const repository = new OcrImageRepository(pool);
 
-        const credential = new DefaultAzureCredential({
-            managedIdentityClientId,
-        });
 
         const client = createImageAnalysisClient(endpoint, credential);
 

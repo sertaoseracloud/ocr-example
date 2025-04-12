@@ -14,7 +14,7 @@
     "@azure-rest/ai-vision-image-analysis": "^1.0.0-beta.3",
     "@azure/identity": "^4.8.0",
     "@azure/storage-blob": "^12.27.0",
-    "mssql": "^11.0.1"
+    "pg": "^8.14.1"
   },
   "devDependencies": {
     "@azure/functions": "^3.0.0",

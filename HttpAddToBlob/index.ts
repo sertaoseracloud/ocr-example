@@ -3,19 +3,19 @@ import { DefaultAzureCredential } from "@azure/identity";
 import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 import { UploadImageService } from "../application/UploadImageService";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
-import sql from "mssql";
+import { Client } from "pg";
 
 // Azure Blob Storage connection details
 const accountUrl = process.env.AZURE_STORAGEBLOB_RESOURCEENDPOINT;
 const managedIdentityClientId = process.env.AZURE_STORAGEBLOB_CLIENTID;
 const containerName = process.env.AZURE_STORAGEBLOB_CONTAINERNAME || "ocr-container";
 
-// Azure SQL Database connection details
-const server = process.env.AZURE_SQL_SERVER;
-const database = process.env.AZURE_SQL_DATABASE;
-const port = parseInt(process.env.AZURE_SQL_PORT);
-const authenticationType = process.env.AZURE_SQL_AUTHENTICATIONTYPE;
-const clientId = process.env.AZURE_SQL_CLIENTID;
+// Azure Postgres SQL Database connection details
+const host = process.env.AZURE_POSTGRESQL_HOST;
+const user = process.env.AZURE_POSTGRESQL_USER;
+const database = process.env.AZURE_POSTGRESQL_DATABASE;
+const port = parseInt(process.env.AZURE_POSTGRESQL_PORT);
+const ssl = process.env.AZURE_POSTGRESQL_SSL === "true" ? { rejectUnauthorized: false } : false;
 
 
 /**
@@ -54,32 +54,31 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             credential,
         );
         context.log("Cliente do Azure Blob Storage criado com sucesso");
-        context.log("Iniciando a conexão com o banco de dados SQL Server");
-        const pool = await sql.connect({
-            server,
-            port,
+        context.log("Buscando credenciais do Azure PostgresSQL Database");
+        const password = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
+        context.log("Credenciais do Azure PostgresSQL Database obtidas com sucesso");
+        context.log("Iniciando o cliente do Azure PostgresSQL Database");
+        const pool = new Client({
+            host,
+            user,
+            password,
             database,
-            authentication: {
-                type: authenticationType
-            },
-            options: {
-                encrypt: true,
-                clientId,
-            }
+            port,
+            ssl,
         });
-        this.context.log("Conexão com o banco de dados SQL Server estabelecida com sucesso");
-        this.context.log("Iniciando o repositório de imagens OCR");
+        context.log("Cliente do Azure PostgresSQL Database criado com sucesso");
+        context.log("Iniciando o repositório de imagens OCR");
         const repository = new OcrImageRepository(pool);
-        this.context.log("Repositório de imagens OCR criado com sucesso");
-        this.context.log("Iniciando o serviço de upload de imagens");
+        context.log("Repositório de imagens OCR criado com sucesso");
+        context.log("Iniciando o serviço de upload de imagens");
         const uploadService = new UploadImageService(
             storage, 
             repository, 
         );
-        this.context.log("Serviço de upload de imagens criado com sucesso");
-        this.context.log("Iniciando o upload da imagem");
+        context.log("Serviço de upload de imagens criado com sucesso");
+        context.log("Iniciando o upload da imagem");
         const { url, fileName } = await uploadService.handleUpload(buffer);
-        this.context.log("Upload da imagem concluído com sucesso");
+        context.log("Upload da imagem concluído com sucesso");
         context.res = {
             status: 200,
             body: {
