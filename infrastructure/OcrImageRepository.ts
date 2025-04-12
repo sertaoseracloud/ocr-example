@@ -1,12 +1,17 @@
+import { Context } from "@azure/functions";
 import { IImageRepository } from "../domain/IImageRepository";
 import { OcrImage } from "../domain/OCRImage";
 import sql from "mssql";
 
 
 export class OcrImageRepository implements IImageRepository {
-  constructor(private readonly pool: sql.ConnectionPool) {}
+  constructor(
+    private readonly pool: sql.ConnectionPool,
+    private readonly context: Context,
+  ) {}
 
   async save(fileName: string, url: string): Promise<void> {
+      this.context.log("Iniciando cadastro dos metadados da imagem");
       try {
         await this.pool.connect();
         const result = await this.pool.request()
@@ -19,8 +24,10 @@ export class OcrImageRepository implements IImageRepository {
         if (result.rowsAffected[0] === 0) {
             throw new Error('Failed to save image to the database');
         }
+        this.context.log("Imagem armazenada com sucesso", fileName);
         return result;
         } catch (err) {
+            this.context.log("Erro ao armazenar imagem", err);
             throw new Error('Error querying the database');
         } finally {
             sql.close();
@@ -28,6 +35,7 @@ export class OcrImageRepository implements IImageRepository {
   }
 
   async getAndMarkPendingImages(): Promise<OcrImage[]> {
+    this.context.log("Buscando imagens pendentes");
     try {
       await this.pool.connect();
 
@@ -48,7 +56,10 @@ export class OcrImageRepository implements IImageRepository {
         INSERTED.Status,
         INSERTED.IsPrescription;
     `);
-
+      if (result.rowsAffected[0] === 0) {
+          throw new Error('No pending images found');
+      }
+      this.context.log("Imagens pendentes encontradas", result.recordset.length);
       return result.recordset.map(row => new OcrImage(
         row.Id,
         row.FileName,
@@ -59,12 +70,14 @@ export class OcrImageRepository implements IImageRepository {
       ));
 
     } catch (err) {
+      this.context.log("Erro ao buscar imagens pendentes", err);
       throw new Error(`Erro ao buscar ou atualizar registros: ${err}`);
     } finally {
       sql.close();
     }
   }
   async saveOcrResult(id: number, isPrescription: boolean): Promise<void> {
+    this.context.log("Atualizando status da imagem");
     try {
       await this.pool.connect();
       const result = await this.pool.request()
@@ -78,6 +91,7 @@ export class OcrImageRepository implements IImageRepository {
       if (result.rowsAffected[0] === 0) {
           throw new Error('Failed to update image status in the database');
       }
+      this.context.log("Status da imagem atualizado com sucesso", id);
     } catch (err) {
         throw new Error('Error querying the database');
     } finally {
