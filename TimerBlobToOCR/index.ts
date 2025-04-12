@@ -33,7 +33,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             }
         });
 
-        const repository = new OcrImageRepository(pool);
+        const repository = new OcrImageRepository(pool, context);
 
         const credential = new DefaultAzureCredential({
             managedIdentityClientId,
@@ -41,7 +41,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
 
         const client = createImageAnalysisClient(endpoint, credential);
 
-        const ocrService = new TextAnalyticsService(client);
+        const ocrService = new TextAnalyticsService(client, context);
 
         const processPendingImages = new ProcessPendingImages(repository, ocrService);
 

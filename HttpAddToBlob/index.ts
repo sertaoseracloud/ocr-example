@@ -46,7 +46,8 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         const storage = new AzureBlobStorage(
             accountUrl,
             containerName,
-            credential
+            credential,
+            context
         );
 
         const pool = await sql.connect({
@@ -62,9 +63,13 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             }
         });
         
-        const repository = new OcrImageRepository(pool);
+        const repository = new OcrImageRepository(pool, context);
 
-        const uploadService = new UploadImageService(storage, repository);
+        const uploadService = new UploadImageService(
+            storage, 
+            repository, 
+            context
+        );
         
         const { url, fileName } = await uploadService.handleUpload(buffer);
 
