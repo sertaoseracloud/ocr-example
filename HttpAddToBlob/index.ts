@@ -54,11 +54,11 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             port,
             database,
             authentication: {
-                type: authenticationType,
-                clientId,
+                type: authenticationType
             },
             options: {
-                encrypt: true
+                encrypt: true,
+                clientId,
             }
         });
         

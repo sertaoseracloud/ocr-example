@@ -25,12 +25,12 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             port,
             database,
             authentication: {
-                type: authenticationType,
-                clientId,
+                type: authenticationType
             },
             options: {
                 encrypt: true,
-            },
+                clientId,
+            }
         });
 
         const repository = new OcrImageRepository(pool);
