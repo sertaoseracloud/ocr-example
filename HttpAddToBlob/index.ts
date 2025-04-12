@@ -2,7 +2,8 @@ import { AzureFunction, Context, HttpRequest } from "@azure/functions"
 import { DefaultAzureCredential } from "@azure/identity";
 import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 import { UploadImageService } from "../application/UploadImageService";
-
+import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
+import sql from "mssql";
 
 // Azure Blob Storage connection details
 const accountUrl = process.env.AZURE_STORAGEBLOB_RESOURCEENDPOINT;
@@ -11,8 +12,9 @@ const containerName = process.env.AZURE_STORAGEBLOB_CONTAINERNAME || "ocr-contai
 
 // Azure SQL Database connection details
 const server = process.env.AZURE_SQL_SERVER;
-const port = process.env.AZURE_SQL_PORT;
 const database = process.env.AZURE_SQL_DATABASE;
+const port = parseInt(process.env.AZURE_SQL_PORT);
+const authenticationType = process.env.AZURE_SQL_AUTHENTICATIONTYPE;
 const clientId = process.env.AZURE_SQL_CLIENTID;
 
 
@@ -33,6 +35,10 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
 
         const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
        
+        if (buffer.length > 15 * 1024 * 1024) {
+            throw new Error("Imagem excede o tamanho máximo de 15MB.");
+        }
+
         const credential = new DefaultAzureCredential({
             managedIdentityClientId: managedIdentityClientId,
         });
@@ -43,7 +49,23 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             credential
         );
 
-        const uploadService = new UploadImageService(storage);
+        const pool = await sql.connect({
+            server,
+            port,
+            database,
+            authentication: {
+                type: authenticationType,
+                clientId,
+            },
+            options: {
+                encrypt: true
+            }
+        });
+        
+        const repository = new OcrImageRepository(pool);
+
+        const uploadService = new UploadImageService(storage, repository);
+        
         const { url, fileName } = await uploadService.handleUpload(buffer);
 
         context.res = {
@@ -51,6 +73,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             body: {
                 message: "Imagem armazenada com sucesso",
                 url,
+                fileName
             }
         };
     

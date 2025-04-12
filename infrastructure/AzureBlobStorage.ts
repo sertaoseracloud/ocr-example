@@ -1,15 +1,7 @@
 import { BlobServiceClient } from "@azure/storage-blob";
 import { DefaultAzureCredential } from "@azure/identity";
 import { IImageStorage } from "../domain/IImageStorage";
-/**
- * @file AzureBlobStorage.ts
- * @description This file defines the AzureBlobStorage class, which implements the IImageStorage interface.
- * The class is responsible for uploading images to Azure Blob Storage.
- * It uses the Azure Storage Blob SDK to interact with Azure Blob Storage.
- * The class constructor takes the Azure Blob Storage account URL, container name, and a credential object.
- * The uploadImage method uploads an image buffer to the specified container in Azure Blob Storage.
- * It returns the URL of the uploaded image.
- */
+
 export class AzureBlobStorage implements IImageStorage {
     private containerName: string;
     private blobServiceClient: BlobServiceClient;
@@ -30,5 +22,29 @@ export class AzureBlobStorage implements IImageStorage {
         const blobClient = containerClient.getBlockBlobClient(fileName);
         await blobClient.upload(buffer, buffer.length);
         return blobClient.url;
+    }
+
+    async downloadImage(url: string): Promise<Buffer> {
+        const urlParts = url.split("/");
+        const containerName = urlParts[3];
+        const blobName = urlParts.slice(4).join("/");
+        const containerClient = this.blobServiceClient.getContainerClient(containerName);
+        const blobClient = containerClient.getBlockBlobClient(blobName);
+        const downloadResponse = await blobClient.download(0);
+        const downloadedBuffer = await this.streamToBuffer(downloadResponse.readableStreamBody);
+        return downloadedBuffer;
+    }
+
+    private async streamToBuffer(readableStream: NodeJS.ReadableStream): Promise<Buffer> {
+        return new Promise((resolve, reject) => {
+            const chunks: Uint8Array[] = [];
+            readableStream.on("data", (chunk) => {
+                chunks.push(chunk);
+            });
+            readableStream.on("end", () => {
+                resolve(Buffer.concat(chunks));
+            });
+            readableStream.on("error", reject);
+        });
     }
 }
