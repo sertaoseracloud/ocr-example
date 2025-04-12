@@ -93,6 +93,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         context.res = {
             status: 500,
             body: "Erro ao armazenar imagem",
+            error
         };
     }
     
