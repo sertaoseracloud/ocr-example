@@ -11,6 +11,7 @@ export class OcrImageRepository implements IImageRepository {
 
   async save(fileName: string, url: string): Promise<void> {
     try {
+      await this.pool.connect();
       const result = await this.pool.query(
         `
           INSERT INTO OcrImages (FileName, Url)
@@ -21,14 +22,16 @@ export class OcrImageRepository implements IImageRepository {
       if (result.rowCount === 0) {
         throw new Error('Failed to insert image into the database');
       }
-      return;
     } catch (err) {
       throw new Error('Error querying the database');
+    } finally {
+      await this.pool.end();
     }
   }
 
   async getAndMarkPendingImages(): Promise<OcrImage[]> {
     try {
+      await this.pool.connect();
       const result = await this.pool.query(`
         WITH cte AS (
           SELECT *
@@ -69,6 +72,7 @@ export class OcrImageRepository implements IImageRepository {
   }
   async saveOcrResult(id: number, isPrescription: boolean): Promise<void> {
     try {
+      await this.pool.connect();
       const result = await this.pool.query(
         `
           UPDATE OcrImages
