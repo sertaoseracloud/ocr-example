@@ -9,7 +9,6 @@ export class AzureBlobStorage implements IImageStorage {
         url: string, 
         private readonly containerName: string, 
         credential: DefaultAzureCredential,
-        private readonly context: Context
     ) {
         this.blobServiceClient = new BlobServiceClient(
             url,
@@ -19,14 +18,11 @@ export class AzureBlobStorage implements IImageStorage {
 
     async uploadImage(buffer: Buffer, fileName: string): Promise<string> {
        try {
-           this.context.log("Iniciando o upload da imagem");
            const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
            const blobClient = containerClient.getBlockBlobClient(fileName);
            await blobClient.upload(buffer, buffer.length);
-           this.context.log("Imagem armazenada com sucesso", blobClient.url);
            return blobClient.url;
        } catch (error) {
-           this.context.log.error("Erro ao armazenar imagem", error);
            throw new Error(`Error uploading image: ${error}`);
        }
     }

@@ -26,6 +26,7 @@ const clientId = process.env.AZURE_SQL_CLIENTID;
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
     context.log("Processing image upload...");
     try {
+        context.log("Verificando se o corpo da requisição contém uma imagem válida");
         if (!req.body || !req.headers["content-type"]?.startsWith("image/")) {
             context.res = {
                 status: 400,
@@ -33,24 +34,27 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             };
             return;
         }
-
+        context.log("Corpo da requisição contém uma imagem válida");
+        context.log("Verificando o tamanho da imagem");
         const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
-       
+        context.log("Tamanho da imagem:", buffer.length);
         if (buffer.length > 15 * 1024 * 1024) {
             throw new Error("Imagem excede o tamanho máximo de 15MB.");
         }
-
+        context.log("Tamanho da imagem válido");
+        context.log("Buscando credenciais do Azure Blob Storage");
         const credential = new DefaultAzureCredential({
             managedIdentityClientId: managedIdentityClientId,
         });
-
+        context.log("Credenciais do Azure Blob Storage obtidas com sucesso");
+        context.log("Iniciando o cliente do Azure Blob Storage");
         const storage = new AzureBlobStorage(
             accountUrl,
             containerName,
             credential,
-            context
         );
-
+        context.log("Cliente do Azure Blob Storage criado com sucesso");
+        context.log("Iniciando a conexão com o banco de dados SQL Server");
         const pool = await sql.connect({
             server,
             port,
@@ -63,17 +67,19 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
                 clientId,
             }
         });
-        
-        const repository = new OcrImageRepository(pool, context);
-
+        this.context.log("Conexão com o banco de dados SQL Server estabelecida com sucesso");
+        this.context.log("Iniciando o repositório de imagens OCR");
+        const repository = new OcrImageRepository(pool);
+        this.context.log("Repositório de imagens OCR criado com sucesso");
+        this.context.log("Iniciando o serviço de upload de imagens");
         const uploadService = new UploadImageService(
             storage, 
             repository, 
-            context
         );
-        
+        this.context.log("Serviço de upload de imagens criado com sucesso");
+        this.context.log("Iniciando o upload da imagem");
         const { url, fileName } = await uploadService.handleUpload(buffer);
-
+        this.context.log("Upload da imagem concluído com sucesso");
         context.res = {
             status: 200,
             body: {

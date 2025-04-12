@@ -12,7 +12,6 @@ export class TextAnalyticsService implements IOCRService {
         private readonly context: Context
     ){}
     async extractText(imageUrl: string): Promise<string> {
-        this.context.log("Iniciando a extração de texto da imagem");
         try {
             const result = await this.client.path(
                "/imageanalysis:analyze"
@@ -38,10 +37,8 @@ export class TextAnalyticsService implements IOCRService {
             if (!lines || lines.length === 0) {
                 throw new Error("No lines found in the image");
             }
-            this.context.log("Texto extraído com sucesso");
             return lines.map((line) => line.text).join("\n");
         } catch (error) {
-            this.context.log.error("Erro ao extrair texto da imagem", error);
             throw new Error(`Error extracting text: ${error}`);
         }
     }

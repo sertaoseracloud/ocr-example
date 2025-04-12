@@ -34,7 +34,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             }
         });
         
-        const repository = new OcrImageRepository(pool, context);
+        const repository = new OcrImageRepository(pool);
 
         const credential = new DefaultAzureCredential({
             managedIdentityClientId,
