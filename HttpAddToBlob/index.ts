@@ -78,7 +78,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         };
     
     } catch (error) {
-        context.log.error("Erro ao armazenar imagem", error);
+        context.log.error("Erro ao armazenar imagem", error.message);
         context.res = {
             status: 500,
             body: "Erro ao armazenar imagem"
