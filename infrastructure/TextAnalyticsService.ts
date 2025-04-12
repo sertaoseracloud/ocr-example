@@ -41,7 +41,7 @@ export class TextAnalyticsService implements IOCRService {
             this.context.log("Texto extraído com sucesso");
             return lines.map((line) => line.text).join("\n");
         } catch (error) {
-            this.context.log("Erro ao extrair texto da imagem", error);
+            this.context.log.error("Erro ao extrair texto da imagem", error);
             throw new Error(`Error extracting text: ${error}`);
         }
     }

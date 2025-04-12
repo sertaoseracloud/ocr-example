@@ -27,7 +27,7 @@ export class OcrImageRepository implements IImageRepository {
         this.context.log("Imagem armazenada com sucesso", fileName);
         return result;
         } catch (err) {
-            this.context.log("Erro ao armazenar imagem", err);
+            this.context.log.error("Erro ao armazenar imagem", err);
             throw new Error('Error querying the database');
         } finally {
             sql.close();
@@ -70,7 +70,7 @@ export class OcrImageRepository implements IImageRepository {
       ));
 
     } catch (err) {
-      this.context.log("Erro ao buscar imagens pendentes", err);
+      this.context.log.error("Erro ao buscar imagens pendentes", err);
       throw new Error(`Erro ao buscar ou atualizar registros: ${err}`);
     } finally {
       sql.close();
@@ -93,6 +93,7 @@ export class OcrImageRepository implements IImageRepository {
       }
       this.context.log("Status da imagem atualizado com sucesso", id);
     } catch (err) {
+        this.context.log.error("Erro ao atualizar status da imagem", err);
         throw new Error('Error querying the database');
     } finally {
         sql.close();
@@ -112,6 +113,7 @@ export class OcrImageRepository implements IImageRepository {
           throw new Error('Failed to update image status in the database');
       }
     } catch (err) {
+        this.context.log.error("Erro ao marcar imagem como erro", err);
         throw new Error('Error querying the database');
     } finally {
         sql.close();
