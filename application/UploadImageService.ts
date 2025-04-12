@@ -9,12 +9,13 @@ export class UploadImageService {
         private readonly imageRepository: IImageRepository,
     ) {}
     async handleUpload(buffer: Buffer): Promise<{ url: string; fileName: string }> {
-        const fileName = `${uuidv4()}.png`;
-        const url = await this.imageStorage.uploadImage(buffer, fileName);
-        const repository = this.imageRepository.save(fileName, url);
-        if (!repository) {
-            throw new Error("Erro ao salvar a imagem no repositório");
+        try {
+            const fileName = `${uuidv4()}.png`;
+            const url = await this.imageStorage.uploadImage(buffer, fileName);
+            await this.imageRepository.save(fileName, url);
+            return { url, fileName };
+        } catch (error) {
+            throw new Error(`Error uploading image: ${error}`);
         }
-        return { url, fileName };
     }
 }
