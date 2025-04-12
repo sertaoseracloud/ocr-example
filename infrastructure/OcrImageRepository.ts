@@ -19,8 +19,9 @@ export class OcrImageRepository implements IImageRepository {
         [fileName, url]
       );
       if (result.rowCount === 0) {
-        throw new Error('Failed to save image to the database');
+        throw new Error('Failed to insert image into the database');
       }
+      return;
     } catch (err) {
       throw new Error('Error querying the database');
     }
