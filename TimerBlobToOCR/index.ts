@@ -19,7 +19,8 @@ const clientId = process.env.AZURE_SQL_CLIENTID;
 
 const timerTrigger: AzureFunction = async function (context: Context, myTimer: any): Promise<void> {
     try {
-
+        context.log("Timer trigger function started.");
+        context.log("Processing pending images...");
         const pool = await sql.connect({
             server,
             port,
@@ -32,7 +33,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
                 clientId,
             }
         });
-
+        
         const repository = new OcrImageRepository(pool, context);
 
         const credential = new DefaultAzureCredential({

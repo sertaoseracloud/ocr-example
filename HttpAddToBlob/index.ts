@@ -24,6 +24,7 @@ const clientId = process.env.AZURE_SQL_CLIENTID;
  * If the upload is successful, it returns the URL of the uploaded image.
  */
 const httpTrigger: AzureFunction = async function (context: Context, req: HttpRequest): Promise<void> {
+    context.log("Processing image upload...");
     try {
         if (!req.body || !req.headers["content-type"]?.startsWith("image/")) {
             context.res = {
