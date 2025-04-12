@@ -3,7 +3,6 @@ import { IImageRepository } from "../domain/IImageRepository";
 import { OcrImage } from "../domain/OCRImage";
 
 
-
 export class OcrImageRepository implements IImageRepository {
   constructor(
     private readonly pool: Client,
@@ -36,13 +35,13 @@ export class OcrImageRepository implements IImageRepository {
         WITH cte AS (
           SELECT *
           FROM OcrImages
-          WHERE Status = 'PENDING'
+          WHERE Status = 'pending'
           ORDER BY UploadDate ASC
           LIMIT 100
           FOR UPDATE SKIP LOCKED
         )
         UPDATE OcrImages
-        SET Status = 'PROCESSING'
+        SET Status = 'processing'
         FROM cte
         WHERE OcrImages.Id = cte.Id
         RETURNING 
@@ -70,44 +69,46 @@ export class OcrImageRepository implements IImageRepository {
       throw new Error(`Error fetching or updating records: ${err}`);
     }
   }
+
   async saveOcrResult(id: number, isPrescription: boolean): Promise<void> {
     try {
       await this.pool.connect();
       const result = await this.pool.query(
         `
           UPDATE OcrImages
-          SET IsPrescription = $1, Status = 'PROCESSED'
+          SET IsPrescription = $1, Status = 'processed'
           WHERE Id = $2
         `,
         [isPrescription, id]
       );
       if (result.rowCount === 0) {
-          throw new Error('Failed to update image status in the database');
+        throw new Error('Failed to update image status in the database');
       }
     } catch (err) {
-        throw new Error('Error querying the database');
+      throw new Error('Error querying the database');
     } finally {
-        this.pool.close();
+      await this.pool.end();
     }
   }
+
   async markAsError(id: number): Promise<void> {
-     await this.pool.connect();
     try {
+      await this.pool.connect();
       const result = await this.pool.query(
         `
           UPDATE OcrImages
-          SET Status = $1
-          WHERE Id = $2
+          SET Status = 'error'
+          WHERE Id = $1
         `,
-        ['ERROR', id]
+        [id]
       );
-      if (result.rowsAffected[0] === 0) {
-          throw new Error('Failed to update image status in the database');
+      if (result.rowCount === 0) {
+        throw new Error('Failed to update image status in the database');
       }
     } catch (err) {
-        throw new Error('Error querying the database');
+      throw new Error('Error querying the database');
     } finally {
-      this.pool.close();
+      await this.pool.end();
     }
   }
 }
