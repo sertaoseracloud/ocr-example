@@ -1,7 +1,7 @@
 import { AzureFunction, Context } from "@azure/functions"
 import { DefaultAzureCredential } from "@azure/identity";
 import createImageAnalysisClient  from "@azure-rest/ai-vision-image-analysis";
-import { Client } from "pg";
+import { Pool } from "pg";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
 import { ProcessPendingImages } from "../application/ProcessPendingImages";
 import { TextAnalyticsService } from "../infrastructure/TextAnalyticsService";
@@ -28,7 +28,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
 
         const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
         
-        const pool = new Client({
+        const pool = new Pool({
             host,
             user,
             password,

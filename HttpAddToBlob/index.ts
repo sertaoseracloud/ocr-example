@@ -3,7 +3,7 @@ import { DefaultAzureCredential } from "@azure/identity";
 import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 import { UploadImageService } from "../application/UploadImageService";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
-import { Client } from "pg";
+import { Pool } from "pg";
 
 // Azure Blob Storage connection details
 const accountUrl = process.env.AZURE_STORAGEBLOB_RESOURCEENDPOINT;
@@ -58,7 +58,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
         context.log("Credenciais do Azure PostgresSQL Database obtidas com sucesso");
         context.log("Iniciando o cliente do Azure PostgresSQL Database");
-        const pool = new Client({
+        const pool = new Pool({
             host,
             user,
             password,

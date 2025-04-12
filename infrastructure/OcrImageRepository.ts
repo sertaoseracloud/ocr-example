@@ -1,37 +1,32 @@
-import { Client } from "pg";
 import { IImageRepository } from "../domain/IImageRepository";
 import { OcrImage } from "../domain/OCRImage";
-
+import { Pool } from "pg";
 
 export class OcrImageRepository implements IImageRepository {
   constructor(
-    private readonly pool: Client,
-  ) {}
+    private readonly pool: Pool, // use Pool, não Client
+  ) { }
 
   async save(fileName: string, url: string): Promise<void> {
     try {
-      await this.pool.connect();
-      const result = await this.pool.query(
+      await this.pool.query(
         `
           INSERT INTO OcrImages (FileName, Url)
           VALUES ($1, $2)
         `,
         [fileName, url]
       );
-      if (result.rowCount === 0) {
-        throw new Error('Failed to insert image into the database');
-      }
     } catch (err) {
-      throw new Error('Error querying the database');
-    } finally {
-      await this.pool.end();
+      throw new Error(`Error inserting image: ${(err as Error).message}`);
     }
   }
 
   async getAndMarkPendingImages(): Promise<OcrImage[]> {
+    const client = await this.pool.connect();
     try {
-      await this.pool.connect();
-      const result = await this.pool.query(`
+      await client.query('BEGIN');
+
+      const result = await client.query(`
         WITH cte AS (
           SELECT *
           FROM OcrImages
@@ -53,9 +48,7 @@ export class OcrImageRepository implements IImageRepository {
           OcrImages.IsPrescription;
       `);
 
-      if (result.rowCount === 0) {
-        throw new Error('No pending images found');
-      }
+      await client.query('COMMIT');
 
       return result.rows.map(row => new OcrImage(
         row.id,
@@ -66,13 +59,15 @@ export class OcrImageRepository implements IImageRepository {
         row.isprescription
       ));
     } catch (err) {
-      throw new Error(`Error fetching or updating records: ${err}`);
+      await client.query('ROLLBACK');
+      throw new Error(`Error fetching or updating records: ${(err as Error).message}`);
+    } finally {
+      client.release();
     }
   }
 
   async saveOcrResult(id: number, isPrescription: boolean): Promise<void> {
     try {
-      await this.pool.connect();
       const result = await this.pool.query(
         `
           UPDATE OcrImages
@@ -81,34 +76,31 @@ export class OcrImageRepository implements IImageRepository {
         `,
         [isPrescription, id]
       );
+
       if (result.rowCount === 0) {
-        throw new Error('Failed to update image status in the database');
+        throw new Error('No image found to update');
       }
     } catch (err) {
-      throw new Error('Error querying the database');
-    } finally {
-      await this.pool.end();
+      throw new Error(`Error updating OCR result: ${(err as Error).message}`);
     }
   }
 
   async markAsError(id: number): Promise<void> {
     try {
-      await this.pool.connect();
       const result = await this.pool.query(
         `
           UPDATE OcrImages
-          SET Status = 'error'
-          WHERE Id = $1
+          SET Status = $1
+          WHERE Id = $2
         `,
-        [id]
+        ['error', id] // status enum is lowercase
       );
+
       if (result.rowCount === 0) {
-        throw new Error('Failed to update image status in the database');
+        throw new Error('No image found to mark as error');
       }
     } catch (err) {
-      throw new Error('Error querying the database');
-    } finally {
-      await this.pool.end();
+      throw new Error(`Error marking image as error: ${(err as Error).message}`);
     }
   }
 }
