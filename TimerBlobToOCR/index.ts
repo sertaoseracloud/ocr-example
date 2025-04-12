@@ -21,11 +21,12 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
     try {
 
         context.log("Processing pending images...");
+        context.log("Fetching credentials for Azure PostegreAzure Cognitive Services...");
         const credential = new DefaultAzureCredential({
             managedIdentityClientId,
         });
 
-        const password = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
+        const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
         
         const pool = new Client({
             host,

@@ -55,7 +55,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         );
         context.log("Cliente do Azure Blob Storage criado com sucesso");
         context.log("Buscando credenciais do Azure PostgresSQL Database");
-        const password = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
+        const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
         context.log("Credenciais do Azure PostgresSQL Database obtidas com sucesso");
         context.log("Iniciando o cliente do Azure PostgresSQL Database");
         const pool = new Client({

@@ -91,8 +91,8 @@ export class OcrImageRepository implements IImageRepository {
     }
   }
   async markAsError(id: number): Promise<void> {
+     await this.pool.connect();
     try {
-      await this.pool.connect();
       const result = await this.pool.query(
         `
           UPDATE OcrImages
