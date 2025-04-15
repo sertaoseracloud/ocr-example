@@ -25,9 +25,9 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
         const credential = new DefaultAzureCredential({
             managedIdentityClientId,
         });
-
+        context.log("Credentials fetched successfully.");
+        context.log("Creating Azure Postgres SQL connection...");
         const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
-        
         const pool = new Pool({
             host,
             user,
@@ -36,18 +36,26 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             port,
             ssl,
         });
+        context.log("Azure Postgres SQL connection created successfully.");
         
+        context.log("Creating OCR image repository...");
         const repository = new OcrImageRepository(pool);
-
-
+        context.log("OCR image repository created successfully.");
+        context.log("Creating Azure Cognitive Services client...");
         const client = createImageAnalysisClient(endpoint, credential);
-
+        context.log("Azure Cognitive Services client created successfully.");
+        context.log("Creating OCR service...");
         const ocrService = new TextAnalyticsService(client, context);
-
+        context.log("OCR service created successfully.");
+        context.log("Creating process pending images service...");
         const processPendingImages = new ProcessPendingImages(repository, ocrService);
-
+        context.log("Process pending images service created successfully.");
+        context.log("Executing process pending images service...");
         await processPendingImages.execute();
-
+        context.log("Process pending images service executed successfully.");
+        context.log("Closing Azure Postgres SQL connection...");
+        await pool.end();
+        context.log("Azure Postgres SQL connection closed successfully.");
         context.log("Pending images processed successfully.");
     } catch (error) {
         context.log(`Error processing pending images: ${error}`);

@@ -17,3 +17,9 @@ export enum Status {
     PROCESSED = "processed",
     ERROR = "error"
 }
+
+export enum AllowedContentTypes {
+    JPEG = 'image/jpeg',
+    PNG = 'image/png',
+    JPG = 'image/jpg',
+}
