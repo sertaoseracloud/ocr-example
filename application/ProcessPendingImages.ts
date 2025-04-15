@@ -8,7 +8,7 @@ export class ProcessPendingImages {
         private readonly ocrService: IOCRService 
     ) {}
     async execute(): Promise<void> {
-        let error = [];
+        let err = [];
         const images = await this.imageRepository.getAndMarkPendingImages();
         
         for (const image of images) {
@@ -17,12 +17,12 @@ export class ProcessPendingImages {
                 const isPrescription = this.isPrescription(text);
                 await this.imageRepository.saveOcrResult(image.id, isPrescription);
             } catch (error) {
-                error.push(error);
+                err.push(error);
                 await this.imageRepository.markAsError(image.id);
             }
         }
-        if (error.length > 0) {
-            throw new Error(`Errors processing images: ${error.join(", ")}`);
+        if (err.length > 0) {
+            throw new Error(`Errors processing images: ${err.join(", ")}`);
         }
     }
     private isPrescription(text: string): boolean {
