@@ -72,13 +72,13 @@ export class OcrImageRepository implements IImageRepository {
         `
           UPDATE OcrImages
           SET IsPrescription = $1, Status = 'processed'
-          WHERE Id = $2
+          WHERE Id = $2 AND Status = 'processing'
         `,
         [isPrescription, id]
       );
 
       if (result.rowCount === 0) {
-        throw new Error('No image found to update');
+        throw new Error('No image found to update or image is not in processing state');
       }
     } catch (err) {
       throw new Error(`Error updating OCR result: ${(err as Error).message}`);
