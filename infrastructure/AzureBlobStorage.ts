@@ -1,7 +1,7 @@
 import { BlobServiceClient } from "@azure/storage-blob";
 import { DefaultAzureCredential } from "@azure/identity";
 import { IImageStorage } from "../domain/IImageStorage";
-import { Context } from "@azure/functions";
+import { AllowedContentTypes } from "../constants";
 
 export class AzureBlobStorage implements IImageStorage {
     private blobServiceClient: BlobServiceClient;
@@ -9,6 +9,7 @@ export class AzureBlobStorage implements IImageStorage {
         url: string, 
         private readonly containerName: string, 
         credential: DefaultAzureCredential,
+        private readonly contentType: AllowedContentTypes = AllowedContentTypes.PNG,
     ) {
         this.blobServiceClient = new BlobServiceClient(
             url,
@@ -20,11 +21,7 @@ export class AzureBlobStorage implements IImageStorage {
        try {
            const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
            const blobClient = containerClient.getBlockBlobClient(fileName);
-           await blobClient.upload(buffer, buffer.length, {
-               blobHTTPHeaders: {
-                   blobContentType: "image/png",
-               },
-           });
+           await blobClient.uploadData(buffer);
            return blobClient.url;
        } catch (error) {
            throw new Error(`Error uploading image: ${error}`);

@@ -1,4 +1,4 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { DefaultAzureCredential } from "@azure/identity";
 import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 import { UploadImageService } from "../application/UploadImageService";
@@ -46,6 +46,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             accountUrl,
             containerName,
             credential,
+            AllowedContentTypes[contentType],
         );
        
         const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
