@@ -18,10 +18,6 @@ const database = process.env.AZURE_POSTGRESQL_DATABASE;
 const port = parseInt(process.env.AZURE_POSTGRESQL_PORT);
 const ssl = process.env.AZURE_POSTGRESQL_SSL === "true" ? { rejectUnauthorized: false } : false;
 
-// Azure Blob Storage connection details
-const accountUrl = process.env.AZURE_STORAGEBLOB_RESOURCEENDPOINT;
-const containerName = process.env.AZURE_STORAGEBLOB_CONTAINERNAME || "ocr-container";
-
 const timerTrigger: AzureFunction = async function (context: Context, myTimer: any): Promise<void> {
     try {
 
@@ -31,12 +27,6 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             managedIdentityClientId,
         });
         context.log("Credentials fetched successfully.");
-        context.log("Creating Azure Blob Storage connection...");
-        const storage = new AzureBlobStorage(
-            accountUrl,
-            containerName,
-            credential,
-        );
         context.log("Azure Blob Storage connection created successfully.");
         context.log("Creating Azure Postgres SQL connection...");
         const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
@@ -57,14 +47,17 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
         const client = createImageAnalysisClient(endpoint, credential);
         context.log("Azure Cognitive Services client created successfully.");
         context.log("Creating OCR service...");
-        const ocrService = new TextAnalyticsService(client, context);
+        const ocrService = new TextAnalyticsService(client);
         context.log("OCR service created successfully.");
         context.log("Creating process pending images service...");
-        const processPendingImages = new ProcessPendingImages(repository, storage, ocrService);
+        const processPendingImages = new ProcessPendingImages(repository,ocrService);
         context.log("Process pending images service created successfully.");
         context.log("Executing process pending images service...");
-        await processPendingImages.execute();
+        const result = await processPendingImages.execute();
         context.log("Process pending images service executed successfully.");
+        context.log("Processed images:", result.processed);
+        context.log("Errors:", result.errors);
+        context.log("Closing Azure Blob Storage connection...");
         context.log("Closing Azure Postgres SQL connection...");
         await pool.end();
         context.log("Azure Postgres SQL connection closed successfully.");

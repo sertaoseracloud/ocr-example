@@ -1,3 +1,3 @@
 export interface IOCRService {
-    extractText(image: Buffer): Promise<string>;
+    extractText(imageUrl: string): Promise<string>;
 }

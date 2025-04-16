@@ -61,9 +61,7 @@ export class OcrImageRepository implements IImageRepository {
     } catch (err) {
       await client.query('ROLLBACK');
       throw new Error(`Error fetching or updating records: ${(err as Error).message}`);
-    } finally {
-      client.release();
-    }
+    } 
   }
 
   async saveOcrResult(id: number, isPrescription: boolean): Promise<void> {

@@ -10,9 +10,8 @@ interface ReadResult {
 export class TextAnalyticsService implements IOCRService {
     constructor(
         private readonly client: ImageAnalysisClient,
-        private readonly context: Context
     ){}
-    async extractText(image: Buffer): Promise<string> {
+    async extractText(imageUrl: string): Promise<string> {
         try {
             const result = await this.client.path(
                "/imageanalysis:analyze"
@@ -20,8 +19,8 @@ export class TextAnalyticsService implements IOCRService {
                 queryParameters: {
                     features: ["Read"],
                 },
-                body: image,
-                contentType: "application/octet-stream",
+                body: { url: imageUrl },
+                contentType: "application/json",
             });
             const { body } = result;
             if (!body || !('readResults' in body)) {
