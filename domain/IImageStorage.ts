@@ -10,5 +10,5 @@
  */
 export interface IImageStorage {
     uploadImage(buffer: Buffer, fileName: string): Promise<string>;
-    downloadImage(fileName: string): Promise<NodeJS.ReadableStream>;
+    downloadImage(fileName: string): Promise<Buffer>;
 }

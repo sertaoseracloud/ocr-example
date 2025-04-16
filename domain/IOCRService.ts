@@ -1,3 +1,3 @@
 export interface IOCRService {
-    extractText(image: NodeJS.ReadableStream): Promise<string>;
+    extractText(image: Buffer): Promise<string>;
 }

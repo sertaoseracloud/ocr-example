@@ -1,3 +1,4 @@
+import fs from "fs";
 import { ImageAnalysisClient } from "@azure-rest/ai-vision-image-analysis";
 import { IOCRService } from "../domain/IOCRService";
 import { Context } from "@azure/functions";
@@ -11,14 +12,13 @@ export class TextAnalyticsService implements IOCRService {
         private readonly client: ImageAnalysisClient,
         private readonly context: Context
     ){}
-    async extractText(image: NodeJS.ReadableStream): Promise<string> {
+    async extractText(image: Buffer): Promise<string> {
         try {
             const result = await this.client.path(
                "/imageanalysis:analyze"
             ).post({
                 queryParameters: {
                     features: ["Read"],
-                    "smartCrops-aspect-ratios": [0.9, 1.33],
                 },
                 body: image,
                 contentType: "application/octet-stream",
