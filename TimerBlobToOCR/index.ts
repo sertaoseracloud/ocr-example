@@ -9,7 +9,7 @@ import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 
 // Azure Cognitive Services connection details
 const managedIdentityClientId = process.env.AZURE_COGNITIVESERVICES_CLIENTID;
-const endpoint = process.env.AZURE_COGNITIVESERVICES_RESOURCEENDPOINT;
+const endpoint = process.env.AZURE_COGNITIVESERVICES_ENDPOINT;
 
 // Azure Postgres SQL Database connection details
 const host = process.env.AZURE_POSTGRESQL_HOST;
@@ -39,7 +39,6 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             ssl,
         });
         context.log("Azure Postgres SQL connection created successfully.");
-        
         context.log("Creating OCR image repository...");
         const repository = new OcrImageRepository(pool);
         context.log("OCR image repository created successfully.");
@@ -62,6 +61,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
         await pool.end();
         context.log("Azure Postgres SQL connection closed successfully.");
         context.log("Pending images processed successfully.");
+        context.log("Timer function executed successfully.");
     } catch (error) {
         context.log(`Error processing pending images: ${error}`);
     }
