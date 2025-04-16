@@ -31,12 +31,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
 
         const contentType = req.headers['content-type'];
         ContentTypeValidator.validate(contentType as AllowedContentTypes);
-        
-        const buffer = Buffer.isBuffer(req.body) ? req.body : Buffer.from(req.body);
-        
-        if (buffer.length > 15 * 1024 * 1024) {
-            throw new Error("Imagem excede o tamanho máximo de 15MB.");
-        }
+
        
         const credential = new DefaultAzureCredential({
             managedIdentityClientId: managedIdentityClientId,
@@ -67,7 +62,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             repository, 
         );
        
-        const { url, fileName } = await uploadService.handleUpload(buffer);
+        const { url, fileName } = await uploadService.handleUpload(req.body);
 
         await pool.end();
 
