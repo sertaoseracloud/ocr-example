@@ -20,34 +20,14 @@ export class AzureBlobStorage implements IImageStorage {
        try {
            const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
            const blobClient = containerClient.getBlockBlobClient(fileName);
-           await blobClient.upload(buffer, buffer.length);
+           await blobClient.upload(buffer, buffer.length, {
+               blobHTTPHeaders: {
+                   blobContentType: "image/png",
+               },
+           });
            return blobClient.url;
        } catch (error) {
            throw new Error(`Error uploading image: ${error}`);
        }
-    }
-
-    //downlaod with stream
-    async downloadImage(fileName: string): Promise<Buffer> {
-        try {
-            const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
-            const blobClient = containerClient.getBlockBlobClient(fileName);
-            const downloadBlockBlobResponse = await blobClient.download(0);
-            if (!downloadBlockBlobResponse.readableStreamBody) {
-                throw new Error("No readable stream found");
-            }
-            const stream = downloadBlockBlobResponse.readableStreamBody;
-            const chunks: Buffer[] = [];
-            for await (const chunk of stream) {
-                chunks.push(
-                    Buffer.isBuffer(chunk)
-                    ? chunk  
-                    : Buffer.from(chunk)
-                );
-            }
-            return Buffer.concat(chunks);
-        } catch (error) {
-            throw new Error(`Error downloading image: ${error}`);
-        }
     }
 }
