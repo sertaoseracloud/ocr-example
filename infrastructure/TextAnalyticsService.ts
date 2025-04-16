@@ -11,19 +11,17 @@ export class TextAnalyticsService implements IOCRService {
         private readonly client: ImageAnalysisClient,
         private readonly context: Context
     ){}
-    async extractText(imageUrl: string): Promise<string> {
+    async extractText(image: NodeJS.ReadableStream): Promise<string> {
         try {
             const result = await this.client.path(
                "/imageanalysis:analyze"
             ).post({
-                body: {
-                    url: imageUrl,
-                },
                 queryParameters: {
                     features: ["Read"],
                     "smartCrops-aspect-ratios": [0.9, 1.33],
                 },
-                contentType: "application/json",
+                body: image,
+                contentType: "application/octet-stream",
             });
             const { body } = result;
             if (!body || !('readResults' in body)) {

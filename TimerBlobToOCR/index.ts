@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
 import { ProcessPendingImages } from "../application/ProcessPendingImages";
 import { TextAnalyticsService } from "../infrastructure/TextAnalyticsService";
+import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 
 // Azure Cognitive Services connection details
 const managedIdentityClientId = process.env.AZURE_COGNITIVESERVICES_CLIENTID;
@@ -17,6 +18,10 @@ const database = process.env.AZURE_POSTGRESQL_DATABASE;
 const port = parseInt(process.env.AZURE_POSTGRESQL_PORT);
 const ssl = process.env.AZURE_POSTGRESQL_SSL === "true" ? { rejectUnauthorized: false } : false;
 
+// Azure Blob Storage connection details
+const accountUrl = process.env.AZURE_STORAGEBLOB_RESOURCEENDPOINT;
+const containerName = process.env.AZURE_STORAGEBLOB_CONTAINERNAME || "ocr-container";
+
 const timerTrigger: AzureFunction = async function (context: Context, myTimer: any): Promise<void> {
     try {
 
@@ -26,6 +31,13 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
             managedIdentityClientId,
         });
         context.log("Credentials fetched successfully.");
+        context.log("Creating Azure Blob Storage connection...");
+        const storage = new AzureBlobStorage(
+            accountUrl,
+            containerName,
+            credential,
+        );
+        context.log("Azure Blob Storage connection created successfully.");
         context.log("Creating Azure Postgres SQL connection...");
         const { token: password } = await credential.getToken('https://ossrdbms-aad.database.windows.net/.default');
         const pool = new Pool({
@@ -48,7 +60,7 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
         const ocrService = new TextAnalyticsService(client, context);
         context.log("OCR service created successfully.");
         context.log("Creating process pending images service...");
-        const processPendingImages = new ProcessPendingImages(repository, ocrService);
+        const processPendingImages = new ProcessPendingImages(repository, storage, ocrService);
         context.log("Process pending images service created successfully.");
         context.log("Executing process pending images service...");
         await processPendingImages.execute();
