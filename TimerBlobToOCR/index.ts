@@ -5,7 +5,6 @@ import { Pool } from "pg";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
 import { ProcessPendingImages } from "../application/ProcessPendingImages";
 import { TextAnalyticsService } from "../infrastructure/TextAnalyticsService";
-import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 
 // Azure Cognitive Services connection details
 const managedIdentityClientId = process.env.AZURE_COGNITIVESERVICES_CLIENTID;
@@ -61,10 +60,10 @@ const timerTrigger: AzureFunction = async function (context: Context, myTimer: a
         await pool.end();
         context.log("Azure Postgres SQL connection closed successfully.");
         context.log("Pending images processed successfully.");
-        context.log("Timer function executed successfully.");
+        context.log("Timer function finished executing.");
     } catch (error) {
         context.log(`Error processing pending images: ${error}`);
-    }
+    } 
 };
 
 export default timerTrigger;

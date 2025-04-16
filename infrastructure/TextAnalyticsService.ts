@@ -1,9 +1,5 @@
-import { ImageAnalysisClient } from "@azure-rest/ai-vision-image-analysis";
+import { ImageAnalysisClient, ImageAnalysisResultOutput, isUnexpected } from "@azure-rest/ai-vision-image-analysis";
 import { IOCRService } from "../domain/IOCRService";
-
-interface ReadResult {
-    lines: { text: string }[];
-}
 
 export class TextAnalyticsService implements IOCRService {
     constructor(
@@ -17,18 +13,17 @@ export class TextAnalyticsService implements IOCRService {
         try {
             const url = new URL(imageUrl);
             if (!url.protocol.startsWith("http")) {
-                throw new Error("Invalid URL protocol");
+               throw new Error("Invalid URL protocol");
             }
-            } catch (error) {
+        } catch (error) {
             throw new Error("Invalid URL format");
         }
         const body = await this.analyzeImage(imageUrl);
-        const readResults = this.getReadResults(body);
-        return this.extractLinesText(readResults);
+        return this.extractLinesText(body);
     }
 
-    private async analyzeImage(imageUrl: string): Promise<any> {
-        const result = await this.client.path("/imageanalysis:analyze").post({
+    private async analyzeImage(imageUrl: string): Promise<ImageAnalysisResultOutput> {
+        const response = await this.client.path("/imageanalysis:analyze").post({
             queryParameters: {
                 features: ["Read"],
             },
@@ -36,32 +31,21 @@ export class TextAnalyticsService implements IOCRService {
             contentType: "application/json",
         });
 
-        if (!result.body) {
-            throw new Error("No response body received from the service");
+        if (isUnexpected(response)) {
+            throw new Error(`Unexpected response: ${response.body.error.message}`);
         }
 
-        return result.body;
+        const result = response.body as ImageAnalysisResultOutput;
+
+        return result;
     }
 
-    private getReadResults(body: any): ReadResult[] {
-        if (!('readResults' in body)) {
-            throw new Error("Unexpected response format");
+    private extractLinesText(result: ImageAnalysisResultOutput): string {
+        if (result.readResult && result.readResult.blocks.length > 0) {
+            return result.readResult.blocks
+                .map(block => block.lines.map(line => line.text).join(" "))
+                .join("\n");
         }
-
-        const { readResults } = body as { readResults?: ReadResult[] };
-        if (!readResults || readResults.length === 0) {
-            throw new Error("No text found in the image");
-        }
-
-        return readResults;
-    }
-
-    private extractLinesText(readResults: ReadResult[]): string {
-        const lines = readResults[0].lines;
-        if (!lines || lines.length === 0) {
-            throw new Error("No lines found in the image");
-        }
-
-        return lines.map((line) => line.text).join("\n");
+        return "";
     }
 }
