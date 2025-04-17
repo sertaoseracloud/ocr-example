@@ -8,10 +8,10 @@ export class UploadImageService {
         private readonly imageStorage: IImageStorage,
         private readonly imageRepository: IImageRepository,
     ) {}
-    async handleUpload(image: any): Promise<{ url: string; fileName: string }> {
+    async handleUpload(buffer: Buffer): Promise<{ url: string; fileName: string }> {
         try {
             const fileName = `${uuidv4()}.png`;
-            const url = await this.imageStorage.uploadImage(image, fileName);
+            const url = await this.imageStorage.uploadImage(buffer, fileName);
             await this.imageRepository.save(fileName, url);
             return { url, fileName };
         } catch (error) {

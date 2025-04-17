@@ -17,11 +17,11 @@ export class AzureBlobStorage implements IImageStorage {
         );
     }
 
-    async uploadImage(image: any, fileName: string): Promise<string> {
+    async uploadImage(image: ArrayBuffer, fileName: string): Promise<string> {
        try {
            const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
            const blobClient = containerClient.getBlockBlobClient(fileName);
-           await blobClient.uploadFile(image);
+           await blobClient.uploadData(image);
            return blobClient.url;
        } catch (error) {
            throw new Error(`Error uploading image: ${error}`);

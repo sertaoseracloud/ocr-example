@@ -1,6 +1,5 @@
 import { PrescriptionKeywords } from "../constants";
 import { IImageRepository } from "../domain/IImageRepository";
-import { IImageStorage } from "../domain/IImageStorage";
 import { IOCRProcessingService, ProcessResult } from "../domain/IOCRProcessingService";
 import { IOCRService } from "../domain/IOCRService";
 import { OcrImage } from "../domain/OCRImage";

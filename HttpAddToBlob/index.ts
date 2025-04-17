@@ -1,10 +1,11 @@
 import { AzureFunction, Context, HttpRequest } from "@azure/functions";
 import { DefaultAzureCredential } from "@azure/identity";
+import { Pool } from "pg";
 import { AzureBlobStorage } from "../infrastructure/AzureBlobStorage";
 import { UploadImageService } from "../application/UploadImageService";
 import { OcrImageRepository } from "../infrastructure/OcrImageRepository";
-import { Pool } from "pg";
-import { ContentTypeValidator } from "../validations/ContentTypeValidator";
+import { ContentTypeValidator } from "../utils/ContentTypeValidator";
+import { FileConverter } from "../utils/FileConverter";
 import { AllowedContentTypes } from "../constants";
 
 // Azure Blob Storage connection details
@@ -32,7 +33,8 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
         const contentType = req.headers['content-type'];
         ContentTypeValidator.validate(contentType as AllowedContentTypes);
 
-       
+        const buffer = await FileConverter.convertFileToArrayBuffer(req.body as File)
+
         const credential = new DefaultAzureCredential({
             managedIdentityClientId: managedIdentityClientId,
         });
@@ -62,7 +64,7 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
             repository, 
         );
        
-        const { url, fileName } = await uploadService.handleUpload(req.body);
+        const { url, fileName } = await uploadService.handleUpload(buffer);
 
         await pool.end();
 
@@ -88,7 +90,4 @@ const httpTrigger: AzureFunction = async function (context: Context, req: HttpRe
 
 export default httpTrigger;
 
-// crie um curl para essa requisicao com a imagem peixe na raiz desse projeto
-// 
-// curl -X POST "http://localhost:7071/api/HttpAddToBlob" -H "Content-Type: image/jpeg" --data-binary "@path/to/your/image.jpg"
 
